@@ -1,0 +1,128 @@
+import { Program, Evaluation } from "./types";
+
+const SAMPLE_CRITERIA = [
+  { id: "c1", label: "Artistic Strength & Originality", maxScore: 5, hint: "Distinct voice, bold concept, cultural significance" },
+  { id: "c2", label: "Impact & Audience Potential", maxScore: 5, hint: "Meaningful reach, serves a real community" },
+  { id: "c3", label: "Artist / Team Capacity", maxScore: 5, hint: "Skills and experience to deliver" },
+  { id: "c4", label: "Growth & Future Potential", maxScore: 5, hint: "Creates lasting momentum" },
+];
+
+export const SAMPLE_PROGRAM: Program = {
+  id: "prog-1",
+  title: "Loubani Grants 2026",
+  description: "Supporting innovative Palestinian music projects that push boundaries and build community.",
+  createdAt: "2026-01-15T10:00:00Z",
+  mode: "scoring",
+  criteria: SAMPLE_CRITERIA,
+  judges: ["Sara Ahmed", "Khalil Barakat", "Nour Mansour"],
+  applicants: [
+    {
+      id: "app-1",
+      name: "Yasmeen Khalidi",
+      submittedAt: "2026-02-01T14:30:00Z",
+      fields: [
+        { label: "City", type: "text", value: "Ramallah" },
+        { label: "Age", type: "text", value: "28" },
+        { label: "Gender", type: "text", value: "Female" },
+        { label: "Project Name", type: "text", value: "Echoes of Return" },
+        { label: "Project Stage", type: "text", value: "Production" },
+        { label: "Project Description", type: "text", value: "An immersive sonic installation combining traditional Palestinian folk melodies with electronic soundscapes. The project explores themes of displacement and belonging through 8-channel spatial audio, creating an environment where audiences physically walk through layers of sound representing different generations of memory. Collaborating with elder musicians from refugee camps to digitize and reimagine oral musical traditions." },
+        { label: "Music Focus", type: "text", value: "Electronic, Traditional, Sound Art" },
+        { label: "Team Size", type: "text", value: "4" },
+        { label: "Funding Use", type: "text", value: "Equipment, Studio Time, Artist Fees" },
+        { label: "Budget", type: "file", value: "https://example.com/budget-khalidi.pdf", fileType: "pdf" },
+        { label: "Performance Sample", type: "file", value: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", fileType: "youtube" },
+        { label: "Portfolio", type: "file", value: "https://picsum.photos/800/400?random=1", fileType: "image" },
+      ],
+    },
+    {
+      id: "app-2",
+      name: "Omar Nasser",
+      submittedAt: "2026-02-03T09:15:00Z",
+      fields: [
+        { label: "City", type: "text", value: "Haifa" },
+        { label: "Age", type: "text", value: "34" },
+        { label: "Gender", type: "text", value: "Male" },
+        { label: "Project Name", type: "text", value: "Maqam Futures" },
+        { label: "Project Stage", type: "text", value: "Post-Production" },
+        { label: "Project Description", type: "text", value: "A full-length album fusing Arabic maqam scales with jazz improvisation and hip-hop production. Each track represents a different maqam mode reinterpreted through contemporary urban sounds. The project includes a documentary short following the recording process across three cities, capturing cross-generational musical dialogue." },
+        { label: "Music Focus", type: "text", value: "Jazz, Hip-Hop, Maqam" },
+        { label: "Team Size", type: "text", value: "6" },
+        { label: "Funding Use", type: "text", value: "Recording, Mixing, Distribution" },
+        { label: "Budget", type: "file", value: "https://example.com/budget-nasser.pdf", fileType: "pdf" },
+        { label: "Performance Sample", type: "file", value: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", fileType: "youtube" },
+        { label: "Portfolio", type: "file", value: "https://picsum.photos/800/400?random=2", fileType: "image" },
+      ],
+    },
+    {
+      id: "app-3",
+      name: "Lina Abed",
+      submittedAt: "2026-02-05T16:45:00Z",
+      fields: [
+        { label: "City", type: "text", value: "Bethlehem" },
+        { label: "Age", type: "text", value: "25" },
+        { label: "Gender", type: "text", value: "Female" },
+        { label: "Project Name", type: "text", value: "Strings Without Borders" },
+        { label: "Project Stage", type: "text", value: "Pre-Production" },
+        { label: "Project Description", type: "text", value: "A collaborative virtual orchestra connecting Palestinian string musicians across the diaspora through networked performance technology. Monthly live-streamed concerts feature real-time ensemble playing between musicians in Beirut, Amman, Berlin, and Santiago, creating a digital gathering space for dispersed communities." },
+        { label: "Music Focus", type: "text", value: "Classical, Orchestral, Digital" },
+        { label: "Team Size", type: "text", value: "12" },
+        { label: "Funding Use", type: "text", value: "Technology, Streaming, Coordination" },
+        { label: "Budget", type: "file", value: "https://example.com/budget-abed.pdf", fileType: "pdf" },
+        { label: "Performance Sample", type: "file", value: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", fileType: "youtube" },
+        { label: "Portfolio", type: "file", value: "https://picsum.photos/800/400?random=3", fileType: "image" },
+      ],
+    },
+    {
+      id: "app-4",
+      name: "Tariq Haddad",
+      submittedAt: "2026-02-07T11:20:00Z",
+      fields: [
+        { label: "City", type: "text", value: "Gaza" },
+        { label: "Age", type: "text", value: "31" },
+        { label: "Gender", type: "text", value: "Male" },
+        { label: "Project Name", type: "text", value: "Dabke Electronica" },
+        { label: "Project Stage", type: "text", value: "Production" },
+        { label: "Project Description", type: "text", value: "Reimagining traditional dabke dance music through electronic production, creating tracks that honor the communal energy of dabke while introducing it to global club culture. The project includes music videos filmed in collaboration with dabke troupes, showing the evolution from village square to dance floor." },
+        { label: "Music Focus", type: "text", value: "Electronic, Dance, Traditional" },
+        { label: "Team Size", type: "text", value: "3" },
+        { label: "Funding Use", type: "text", value: "Production, Music Videos, Marketing" },
+        { label: "Budget", type: "file", value: "https://example.com/budget-haddad.pdf", fileType: "pdf" },
+        { label: "Performance Sample", type: "file", value: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", fileType: "youtube" },
+        { label: "Portfolio", type: "file", value: "https://picsum.photos/800/400?random=4", fileType: "image" },
+      ],
+    },
+    {
+      id: "app-5",
+      name: "Rania Qasem",
+      submittedAt: "2026-02-10T08:00:00Z",
+      fields: [
+        { label: "City", type: "text", value: "Nablus" },
+        { label: "Age", type: "text", value: "29" },
+        { label: "Gender", type: "text", value: "Female" },
+        { label: "Project Name", type: "text", value: "Lullabies for Tomorrow" },
+        { label: "Project Stage", type: "text", value: "Pre-Production" },
+        { label: "Project Description", type: "text", value: "A multimedia album project collecting, preserving, and reinterpreting Palestinian lullabies from across historic Palestine. Working with mothers and grandmothers to record original lullabies, then collaborating with contemporary producers to create gentle reimaginings. Accompanied by an illustrated book connecting each song to its geographic and emotional origin." },
+        { label: "Music Focus", type: "text", value: "Vocal, Folk, Ambient" },
+        { label: "Team Size", type: "text", value: "5" },
+        { label: "Funding Use", type: "text", value: "Field Recording, Production, Book Design" },
+        { label: "Budget", type: "file", value: "https://example.com/budget-qasem.pdf", fileType: "pdf" },
+        { label: "Performance Sample", type: "file", value: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", fileType: "youtube" },
+        { label: "Portfolio", type: "file", value: "https://picsum.photos/800/400?random=5", fileType: "image" },
+      ],
+    },
+  ],
+};
+
+export const SAMPLE_EVALUATIONS: Evaluation[] = [
+  // Sara Ahmed's evaluations
+  { programId: "prog-1", applicantId: "app-1", judgeName: "Sara Ahmed", mode: "scoring", scores: { c1: 5, c2: 4, c3: 4, c4: 5 }, totalScore: 18, notes: "Exceptional concept. The spatial audio approach is innovative and deeply rooted in cultural memory.", submittedAt: "2026-02-12T10:00:00Z" },
+  { programId: "prog-1", applicantId: "app-2", judgeName: "Sara Ahmed", mode: "scoring", scores: { c1: 4, c2: 5, c3: 5, c4: 4 }, totalScore: 18, notes: "Strong cross-genre fusion. The documentary component adds significant value.", submittedAt: "2026-02-12T10:30:00Z" },
+  { programId: "prog-1", applicantId: "app-3", judgeName: "Sara Ahmed", mode: "scoring", scores: { c1: 3, c2: 5, c3: 3, c4: 4 }, totalScore: 15, notes: "Beautiful concept but ambitious technically. Needs more detail on platform reliability.", submittedAt: "2026-02-12T11:00:00Z" },
+  // Khalil Barakat's evaluations
+  { programId: "prog-1", applicantId: "app-1", judgeName: "Khalil Barakat", mode: "scoring", scores: { c1: 4, c2: 5, c3: 4, c4: 4 }, totalScore: 17, notes: "Community impact is the standout here. Would fund.", submittedAt: "2026-02-13T09:00:00Z" },
+  { programId: "prog-1", applicantId: "app-2", judgeName: "Khalil Barakat", mode: "scoring", scores: { c1: 5, c2: 4, c3: 5, c4: 5 }, totalScore: 19, notes: "Omar has a proven track record. This project will deliver.", submittedAt: "2026-02-13T09:30:00Z" },
+  { programId: "prog-1", applicantId: "app-4", judgeName: "Khalil Barakat", mode: "scoring", scores: { c1: 4, c2: 4, c3: 3, c4: 4 }, totalScore: 15, notes: "Exciting direction for dabke. The music video component is compelling.", submittedAt: "2026-02-13T10:00:00Z" },
+  // Nour Mansour - partial
+  { programId: "prog-1", applicantId: "app-1", judgeName: "Nour Mansour", mode: "scoring", scores: { c1: 5, c2: 5, c3: 5, c4: 5 }, totalScore: 20, notes: "Top pick. This is exactly the kind of project we should be funding.", submittedAt: "2026-02-14T14:00:00Z" },
+];
