@@ -1,9 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useApp } from "@/contexts/AppContext";
 import { Applicant, ApplicantField, Evaluation } from "@/lib/types";
-import { ArrowLeft, Upload, Plus, X, FileText, User, ChevronRight } from "lucide-react";
+import { ArrowLeft, Upload, Plus, X, FileText, User, ChevronRight, RefreshCw } from "lucide-react";
 import Papa from "papaparse";
+import * as XLSX from "xlsx";
+import { supabase } from "@/integrations/supabase/client";
 
 const ProgramDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -264,11 +266,15 @@ function SettingsTab({ program, onUpdate, onImport }: { program: any; onUpdate: 
 
       <hr className="border-border" />
 
+      <TallyWebhookSync programId={program.id} onImport={onImport} />
+
+      <hr className="border-border" />
+
       <div>
         <h3 className="font-display text-lg mb-3">Import Applicants</h3>
         <div className="flex gap-2">
           <button onClick={() => setImportMode("csv")} className={`h-9 px-4 rounded-lg border text-sm font-body transition-all ${importMode === "csv" ? "bg-foreground text-background border-foreground" : "border-border hover:border-foreground/30"}`}>
-            <Upload className="w-3.5 h-3.5 inline mr-1" /> CSV Upload
+            <Upload className="w-3.5 h-3.5 inline mr-1" /> CSV / XLSX Upload
           </button>
           <button onClick={() => setImportMode("json")} className={`h-9 px-4 rounded-lg border text-sm font-body transition-all ${importMode === "json" ? "bg-foreground text-background border-foreground" : "border-border hover:border-foreground/30"}`}>
             {"{ }"} JSON Paste
@@ -285,15 +291,108 @@ function SettingsTab({ program, onUpdate, onImport }: { program: any; onUpdate: 
 function detectFileType(url: string): { type: "file"; fileType: import("@/lib/types").FileType } | { type: "text" } {
   if (!url || typeof url !== "string") return { type: "text" };
   const lower = url.toLowerCase();
+  // Strip query params for extension matching
+  const pathOnly = lower.split("?")[0];
   if (lower.includes("youtube.com") || lower.includes("youtu.be")) return { type: "file", fileType: "youtube" };
   if (lower.includes("vimeo.com")) return { type: "file", fileType: "vimeo" };
-  if (lower.match(/\.(pdf)$/)) return { type: "file", fileType: "pdf" };
-  if (lower.match(/\.(jpg|jpeg|png|gif|webp|svg)$/)) return { type: "file", fileType: "image" };
-  if (lower.match(/\.(mp4|webm|mov)$/)) return { type: "file", fileType: "video" };
-  if (lower.match(/\.(xlsx|xls|csv)$/)) return { type: "file", fileType: "excel" };
-  if (lower.match(/\.(docx|doc)$/)) return { type: "file", fileType: "word" };
+  if (pathOnly.match(/\.(pdf)$/)) return { type: "file", fileType: "pdf" };
+  if (pathOnly.match(/\.(jpg|jpeg|png|gif|webp|svg)$/)) return { type: "file", fileType: "image" };
+  if (pathOnly.match(/\.(mp4|webm|mov|wav|mp3|m4a)$/)) return { type: "file", fileType: "video" };
+  if (pathOnly.match(/\.(xlsx|xls|csv)$/)) return { type: "file", fileType: "excel" };
+  if (pathOnly.match(/\.(docx|doc)$/)) return { type: "file", fileType: "word" };
   if (lower.startsWith("http")) return { type: "file", fileType: "unknown" };
   return { type: "text" };
+}
+
+function TallyWebhookSync({ programId, onImport }: { programId: string; onImport: (pid: string, apps: Applicant[]) => void }) {
+  const [loading, setLoading] = useState(false);
+  const [count, setCount] = useState<number | null>(null);
+  const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tally-webhook`;
+
+  const fetchNewApplicants = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("webhook_applicants")
+        .select("*")
+        .eq("imported", false)
+        .order("submitted_at", { ascending: true });
+
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        setCount(0);
+        return;
+      }
+
+      const applicants: Applicant[] = data.map((row: any) => ({
+        id: row.id,
+        name: row.applicant_name,
+        submittedAt: row.submitted_at,
+        fields: (row.fields as any[]).map((f: any) => ({
+          label: f.label,
+          type: f.type || "text",
+          value: f.value,
+          ...(f.fileType ? { fileType: f.fileType } : {}),
+        })),
+      }));
+
+      onImport(programId, applicants);
+
+      // Mark as imported
+      const ids = data.map((r: any) => r.id);
+      await supabase
+        .from("webhook_applicants")
+        .update({ imported: true })
+        .in("id", ids);
+
+      setCount(applicants.length);
+    } catch (err) {
+      console.error("Sync error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [programId, onImport]);
+
+  return (
+    <div>
+      <h3 className="font-display text-lg mb-3">Tally Webhook (Live Sync)</h3>
+      <div className="p-4 border border-border rounded-lg bg-card space-y-3">
+        <div>
+          <p className="text-xs text-muted-foreground font-body mb-1">Webhook URL (paste this into Tally → Integrations → Webhooks)</p>
+          <div className="flex gap-2">
+            <input
+              readOnly
+              value={webhookUrl}
+              className="flex-1 h-8 px-3 border border-border rounded bg-accent text-xs font-mono font-body focus:outline-none"
+              onClick={(e) => (e.target as HTMLInputElement).select()}
+            />
+            <button
+              onClick={() => navigator.clipboard.writeText(webhookUrl)}
+              className="h-8 px-3 border border-border rounded text-xs font-body hover:bg-accent transition-colors"
+            >
+              Copy
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={fetchNewApplicants}
+            disabled={loading}
+            className="h-9 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-body font-medium hover:bg-primary/90 transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            {loading ? "Syncing..." : "Pull New Submissions"}
+          </button>
+          {count !== null && (
+            <p className="text-xs text-muted-foreground font-body">
+              {count === 0 ? "No new submissions" : `Imported ${count} new applicant${count > 1 ? "s" : ""}`}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function CSVImporter({ programId, onImport }: { programId: string; onImport: (pid: string, apps: Applicant[]) => void }) {
@@ -301,26 +400,43 @@ function CSVImporter({ programId, onImport }: { programId: string; onImport: (pi
   const [rows, setRows] = useState<string[][]>([]);
   const [mapping, setMapping] = useState<Record<number, string>>({});
 
+  const processData = (data: string[][]) => {
+    if (data.length > 0) {
+      setHeaders(data[0]);
+      setRows(data.slice(1).filter(r => r.some(c => c && c.toString().trim())));
+      const autoMap: Record<number, string> = {};
+      data[0].forEach((h, i) => {
+        const lower = (h || "").toLowerCase();
+        if (lower === "full name" || lower === "name") autoMap[i] = "name";
+        else if (lower.includes("submitted at") || lower.includes("submitted_at") || lower.includes("submission date")) autoMap[i] = "date";
+        else if (lower.includes("submission id") || lower.includes("respondent id")) autoMap[i] = "skip";
+        else autoMap[i] = "field";
+      });
+      setMapping(autoMap);
+    }
+  };
+
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    Papa.parse(file, {
-      complete: (result) => {
-        const data = result.data as string[][];
-        if (data.length > 0) {
-          setHeaders(data[0]);
-          setRows(data.slice(1).filter(r => r.some(c => c.trim())));
-          const autoMap: Record<number, string> = {};
-          data[0].forEach((h, i) => {
-            const lower = h.toLowerCase();
-            if (lower.includes("name")) autoMap[i] = "name";
-            else if (lower.includes("date") || lower.includes("submitted")) autoMap[i] = "date";
-            else autoMap[i] = "field";
-          });
-          setMapping(autoMap);
+    const ext = file.name.split(".").pop()?.toLowerCase();
+
+    if (ext === "xlsx" || ext === "xls") {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const wb = XLSX.read(evt.target?.result, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json<string[]>(ws, { header: 1, defval: "" });
+        processData(data.map(row => row.map(cell => String(cell ?? ""))));
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      Papa.parse(file, {
+        complete: (result) => {
+          processData(result.data as string[][]);
         }
-      }
-    });
+      });
+    }
   };
 
   const handleImport = () => {
@@ -359,8 +475,8 @@ function CSVImporter({ programId, onImport }: { programId: string; onImport: (pi
       <div className="mt-4">
         <label className="block w-full border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/40 transition-colors">
           <Upload className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground font-body">Click to upload CSV</p>
-          <input type="file" accept=".csv" onChange={handleFile} className="hidden" />
+          <p className="text-sm text-muted-foreground font-body">Click to upload CSV or XLSX</p>
+          <input type="file" accept=".csv,.xlsx,.xls" onChange={handleFile} className="hidden" />
         </label>
       </div>
     );
