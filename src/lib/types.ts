@@ -1,5 +1,5 @@
 export type EvaluationMode = "triage" | "scoring";
-export type TriageDecision = "yes" | "no" | "review";
+export type TriageDecision = "yes" | "no" | "review" | "disqualify";
 export type FieldType = "text" | "url" | "file";
 export type FileType = "pdf" | "image" | "video" | "excel" | "word" | "youtube" | "vimeo" | "unknown";
 
@@ -50,4 +50,5 @@ export interface Evaluation {
 export interface AuthUser {
   name: string;
   role: "admin" | "judge";
+  isInternal?: boolean;
 }
