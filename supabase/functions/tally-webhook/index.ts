@@ -103,6 +103,32 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Send email notification via Resend API
+    try {
+      const resendApiKey = Deno.env.get("RESEND_API_KEY");
+      if (resendApiKey) {
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${resendApiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            from: "notifications@yourdomain.com", // Update with your verified domain
+            to: "admin@yourdomain.com", // Update with your notification email
+            subject: `New 2048 Award Application: ${applicantName}`,
+            html: `
+              <h2>New Application Received</h2>
+              <p>A new application was just submitted by <strong>${applicantName}</strong> for the 2048 Award.</p>
+              <p>Log in to Appraise Central to view the full details.</p>
+            `
+          })
+        });
+      }
+    } catch (emailErr) {
+      console.error("Failed to send email notification:", emailErr);
+    }
+
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
