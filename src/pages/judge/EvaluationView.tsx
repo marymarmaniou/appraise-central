@@ -7,7 +7,8 @@ import { ArrowLeft, ArrowRight, ChevronLeft, FileText, Check } from "lucide-reac
 const EvaluationView = () => {
   const { programId } = useParams<{ programId: string }>();
   const navigate = useNavigate();
-  const { user, programs, getJudgeEvaluation, saveEvaluation } = useApp();
+  // Added getEvaluationsForApplicant here
+  const { user, programs, getJudgeEvaluation, saveEvaluation, getEvaluationsForApplicant } = useApp();
   const program = programs.find(p => p.id === programId);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [saved, setSaved] = useState(false);
@@ -15,11 +16,17 @@ const EvaluationView = () => {
   const applicants = program?.applicants || [];
   const applicant = applicants[currentIdx];
 
-  // Get existing evaluation
+  // Get existing evaluation for the current judge
   const existing = useMemo(() => {
     if (!program || !applicant || !user) return undefined;
     return getJudgeEvaluation(program.id, applicant.id, user.name);
   }, [program, applicant, user, getJudgeEvaluation]);
+
+  // Get evaluations from OTHER judges (only if user is internal)
+  const otherEvaluations = useMemo(() => {
+    if (!program || !applicant || !user?.isInternal) return [];
+    return getEvaluationsForApplicant(program.id, applicant.id).filter(e => e.judgeName !== user.name);
+  }, [program, applicant, user, getEvaluationsForApplicant]);
 
   // Scoring state
   const [scores, setScores] = useState<Record<string, number>>({});
@@ -45,7 +52,7 @@ const EvaluationView = () => {
   // Keyboard nav
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
       if (e.key === "ArrowLeft" && currentIdx > 0) setCurrentIdx(i => i - 1);
       if (e.key === "ArrowRight" && currentIdx < applicants.length - 1) setCurrentIdx(i => i + 1);
     };
@@ -97,14 +104,26 @@ const EvaluationView = () => {
       <div className="flex-[3] overflow-y-auto border-r border-border">
         {/* Sticky header */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate(`/judge`)} className="text-muted-foreground hover:text-foreground transition-colors">
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <div>
-              <h2 className="font-display text-lg leading-tight">{applicant.name}</h2>
-              <p className="text-[10px] text-muted-foreground font-body">Submitted {new Date(applicant.submittedAt).toLocaleDateString()}</p>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <button onClick={() => navigate(`/judge`)} className="text-muted-foreground hover:text-foreground transition-colors mr-1">
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <select 
+                className="font-display text-lg leading-tight bg-transparent border-none focus:ring-0 cursor-pointer outline-none appearance-none hover:bg-accent/50 rounded px-1"
+                value={currentIdx}
+                onChange={(e) => setCurrentIdx(Number(e.target.value))}
+              >
+                {applicants.map((app, idx) => (
+                  <option key={app.id} value={idx}>
+                    {idx + 1}. {app.name}
+                  </option>
+                ))}
+              </select>
             </div>
+            <p className="text-[10px] text-muted-foreground font-body ml-8">
+              Submitted {new Date(applicant.submittedAt).toLocaleDateString()}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -129,8 +148,10 @@ const EvaluationView = () => {
 
         {/* Content */}
         <div className="p-6 space-y-4">
-          {applicant.fields.map((f, i) => (
-            <FieldRenderer key={i} field={f} />
+          {applicant.fields
+            .filter(f => f.value.toLowerCase() !== "false" && f.value !== "")
+            .map((f, i) => (
+              <FieldRenderer key={i} field={f} />
           ))}
         </div>
       </div>
@@ -149,6 +170,7 @@ const EvaluationView = () => {
                 { value: "yes" as const, label: "Yes", color: "border-success text-success", activeBg: "bg-success text-success-foreground" },
                 { value: "no" as const, label: "No", color: "border-destructive text-destructive", activeBg: "bg-destructive text-destructive-foreground" },
                 { value: "review" as const, label: "Needs Review", color: "border-warning text-warning", activeBg: "bg-warning text-warning-foreground" },
+                { value: "disqualify" as const, label: "Disqualify", color: "border-red-900 text-red-900", activeBg: "bg-red-900 text-white" },
               ]).map(opt => (
                 <button
                   key={opt.value}
@@ -158,7 +180,7 @@ const EvaluationView = () => {
                   }`}
                 >
                   {decision === opt.value && <Check className="w-4 h-4" />}
-                  {opt.value === "yes" ? "✓" : opt.value === "no" ? "✗" : "◎"} {opt.label}
+                  {opt.value === "yes" ? "✓" : opt.value === "no" ? "✗" : opt.value === "disqualify" ? "∅" : "◎"} {opt.label}
                 </button>
               ))}
             </div>
@@ -222,9 +244,38 @@ const EvaluationView = () => {
               placeholder="Your notes..."
             />
           </div>
+
+          {/* Internal Judges View */}
+          {user?.isInternal && otherEvaluations.length > 0 && (
+            <div className="mt-6 mb-4 border-t border-border pt-4">
+              <h4 className="text-sm font-display mb-3">Other Judges' Evaluations</h4>
+              <div className="space-y-3">
+                {otherEvaluations.map((ev, i) => (
+                  <div key={i} className="p-3 bg-accent/30 rounded-lg border border-border/50">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xs font-bold">{ev.judgeName}</p>
+                      {ev.mode === "scoring" ? (
+                        <p className="text-xs font-bold text-primary">{ev.totalScore} pts</p>
+                      ) : (
+                        <p className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                          ev.decision === 'yes' ? 'bg-success/20 text-success' : 
+                          ev.decision === 'no' ? 'bg-destructive/20 text-destructive' : 
+                          ev.decision === 'disqualify' ? 'bg-red-900/20 text-red-900' : 
+                          'bg-warning/20 text-warning'
+                        }`}>
+                          {ev.decision}
+                        </p>
+                      )}
+                    </div>
+                    {ev.notes && <p className="text-xs text-muted-foreground italic mt-2">"{ev.notes}"</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="space-y-2 mt-auto">
+        <div className="space-y-2 mt-auto pt-4">
           {existing && (
             <p className="text-[10px] text-muted-foreground font-body text-center">
               Last saved {new Date(existing.submittedAt).toLocaleString()}
@@ -284,8 +335,21 @@ function FieldRenderer({ field }: { field: ApplicantField }) {
       return (
         <div>
           <p className="text-xs text-muted-foreground font-body mb-1">{field.label}</p>
-          <a href={field.value} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-3 border border-border rounded-lg hover:bg-accent transition-colors text-sm font-body">
-            <FileText className="w-4 h-4 text-primary" /> Open PDF ↗
+          <iframe src={field.value} className="w-full h-96 rounded-lg border border-border bg-card" title={field.label} />
+          <a href={field.value} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 mt-2 p-2 border border-border rounded-lg hover:bg-accent transition-colors text-xs font-body text-primary">
+            <FileText className="w-3 h-3" /> Open PDF in new tab ↗
+          </a>
+        </div>
+      );
+    }
+    if (ft === "excel") {
+      const viewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(field.value)}`;
+      return (
+        <div>
+          <p className="text-xs text-muted-foreground font-body mb-1">{field.label}</p>
+          <iframe src={viewerUrl} className="w-full h-96 rounded-lg border border-border bg-card" title={field.label} />
+          <a href={field.value} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 mt-2 p-2 border border-border rounded-lg hover:bg-accent transition-colors text-xs font-body text-primary">
+            <FileText className="w-3 h-3" /> Download Excel Document ↗
           </a>
         </div>
       );
