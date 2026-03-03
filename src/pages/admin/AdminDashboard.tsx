@@ -12,13 +12,14 @@ const AdminDashboard = () => {
   return (
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-display">Programs</h1>
+        <h1 className="text-2xl sm:text-3xl font-display">Programs</h1>
         <button
           onClick={() => setShowModal(true)}
-          className="h-9 px-4 bg-foreground text-background rounded-lg text-sm font-medium font-body hover:bg-foreground/90 transition-colors flex items-center gap-2"
+          className="h-10 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-medium font-body hover:bg-primary/90 transition-colors flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
-          New Program
+          <span className="hidden sm:inline">New Program</span>
+          <span className="sm:hidden">New</span>
         </button>
       </div>
 
@@ -117,14 +118,14 @@ function NewProgramModal({ onClose, onSave }: { onClose: () => void; onSave: (p:
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/20 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/20 backdrop-blur-sm p-4" onClick={onClose}>
       <div className="bg-card border border-border rounded-lg w-full max-w-lg p-6 animate-scale-in max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <h2 className="font-display text-xl mb-4">New Program</h2>
 
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1 font-body">Title</label>
-            <input value={title} onChange={e => setTitle(e.target.value)} className="w-full h-9 px-3 border border-border rounded-lg bg-background text-sm font-body focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="e.g. Artist Residency Q3" />
+            <input value={title} onChange={e => setTitle(e.target.value)} className="w-full h-10 px-3 border border-border rounded-lg bg-background text-sm font-body focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="e.g. Artist Residency Q3" />
           </div>
           <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1 font-body">Description</label>
@@ -134,7 +135,7 @@ function NewProgramModal({ onClose, onSave }: { onClose: () => void; onSave: (p:
             <label className="block text-xs font-medium text-muted-foreground mb-1 font-body">Evaluation Mode</label>
             <div className="flex gap-2">
               {(["scoring", "triage"] as const).map(m => (
-                <button key={m} type="button" onClick={() => setMode(m)} className={`flex-1 h-9 rounded-lg border text-sm font-medium font-body transition-all ${mode === m ? "bg-foreground text-background border-foreground" : "bg-background text-foreground border-border hover:border-foreground/30"}`}>
+                <button key={m} type="button" onClick={() => setMode(m)} className={`flex-1 h-10 rounded-lg border text-sm font-medium font-body transition-all ${mode === m ? "bg-primary text-primary-foreground border-primary" : "bg-background text-foreground border-border hover:border-primary/30"}`}>
                   {m === "scoring" ? "Scoring" : "Triage"}
                 </button>
               ))}
@@ -163,8 +164,8 @@ function NewProgramModal({ onClose, onSave }: { onClose: () => void; onSave: (p:
         </div>
 
         <div className="flex justify-end gap-2 mt-6">
-          <button onClick={onClose} className="h-9 px-4 rounded-lg border border-border text-sm font-body hover:bg-accent transition-colors">Cancel</button>
-          <button onClick={handleSave} disabled={!title.trim()} className="h-9 px-4 bg-foreground text-background rounded-lg text-sm font-medium font-body hover:bg-foreground/90 transition-colors disabled:opacity-40">Create Program</button>
+          <button onClick={onClose} className="h-10 px-4 rounded-lg border border-border text-sm font-body hover:bg-accent transition-colors">Cancel</button>
+          <button onClick={handleSave} disabled={!title.trim()} className="h-10 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-medium font-body hover:bg-primary/90 transition-colors disabled:opacity-40">Create Program</button>
         </div>
       </div>
     </div>
