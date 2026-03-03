@@ -1,6 +1,6 @@
 export type EvaluationMode = "triage" | "scoring";
 export type TriageDecision = "yes" | "no" | "review" | "disqualify";
-export type FieldType = "text" | "url" | "file";
+export type FieldType = "text" | "url" | "file" | "boolean" | "multiselect";
 export type FileType = "pdf" | "image" | "video" | "excel" | "word" | "youtube" | "vimeo" | "unknown";
 
 export interface Criterion {
@@ -15,6 +15,9 @@ export interface ApplicantField {
   type: FieldType;
   value: string;
   fileType?: FileType;
+  booleanValue?: boolean;
+  selectedOptions?: string[];
+  availableOptions?: string[];
 }
 
 export interface Applicant {

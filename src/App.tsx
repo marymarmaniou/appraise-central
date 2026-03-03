@@ -25,13 +25,13 @@ function AuthenticatedRoutes() {
       <Routes>
         {user.role === "admin" ? (
           <>
-            <Route path="/admin" element={<main className="max-w-6xl mx-auto px-6 py-6"><AdminDashboard /></main>} />
-            <Route path="/admin/program/:id" element={<main className="max-w-6xl mx-auto px-6 py-6"><ProgramDetail /></main>} />
+            <Route path="/admin" element={<main className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6"><AdminDashboard /></main>} />
+            <Route path="/admin/program/:id" element={<main className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6"><ProgramDetail /></main>} />
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </>
         ) : (
           <>
-            <Route path="/judge" element={<main className="max-w-6xl mx-auto px-6 py-6"><JudgePrograms /></main>} />
+            <Route path="/judge" element={<main className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6"><JudgePrograms /></main>} />
             <Route path="/judge/program/:programId" element={<EvaluationView />} />
             <Route path="*" element={<Navigate to="/judge" replace />} />
           </>

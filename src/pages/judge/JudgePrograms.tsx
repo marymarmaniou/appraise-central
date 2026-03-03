@@ -10,7 +10,7 @@ const JudgePrograms = () => {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-3xl font-display mb-6">My Programs</h1>
+      <h1 className="text-2xl sm:text-3xl font-display mb-6">My Programs</h1>
 
       {myPrograms.length === 0 ? (
         <div className="text-center py-20">
@@ -28,7 +28,7 @@ const JudgePrograms = () => {
               <button
                 key={program.id}
                 onClick={() => navigate(`/judge/program/${program.id}`)}
-                className="w-full text-left p-5 bg-card border border-border rounded-lg hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 animate-slide-up flex items-center justify-between"
+                className="w-full text-left p-4 sm:p-5 bg-card border border-border rounded-lg hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 animate-slide-up flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
                 style={{ animationDelay: `${i * 50}ms` }}
               >
                 <div>
@@ -39,7 +39,7 @@ const JudgePrograms = () => {
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-24 h-1.5 bg-accent rounded-sm overflow-hidden">
+                  <div className="w-24 h-2 bg-accent rounded-sm overflow-hidden">
                     <div className={`h-full rounded-sm animate-progress-fill ${isComplete ? "bg-success" : "bg-primary"}`} style={{ width: `${pct}%` }} />
                   </div>
                   <span className={`text-xs font-body font-medium px-2 py-0.5 rounded ${program.mode === "scoring" ? "bg-primary/10 text-primary" : "bg-warning/10 text-warning"}`}>
